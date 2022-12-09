@@ -1,0 +1,47 @@
+- hosts: localhost
+  become: true
+  vars:
+    container_count: 4
+    default_container_name: docker
+    default_container_image: ubuntu
+    default_container_command: sleep 1
+    ansible_distribution_release: bionic
+    ansible_user: jensen
+  tasks:
+  - name: "Install aptitude"
+    apt: name=aptitude state=present
+    when: ansible_os_family == "Debian"
+  - name: Install required system packages
+    apt:
+      pkg:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+        - python3-pip
+        - virtualenv
+        - python3-setuptools
+      state: latest
+      update_cache: yes
+  - name: Add Docker GPG apt key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+  - name: Add Docker APT repository
+    apt_repository:
+      repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+      state: present
+  - name: Install Docker
+    apt:
+      name:
+        - docker-ce
+      state: latest
+      update_cache: yes
+  - name: Install Docker Python module
+    pip:
+      name: docker
+  - name: Add user to docker group
+    user:
+      name: "{{ ansible_user }}"
+      groups: docker
+      append: yes
